@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -22,8 +22,8 @@
 </head>
 <body>
 <div class="card" id="card">
-  <h1>ðŸ“… Gerente Vilamore</h1>
-  <p class="sub">Acesso da equipe â€” entre com o login da escala</p>
+  <h1>📱 Gerente Vilamore</h1>
+  <p class="sub">Painel do gerente — acesso restrito</p>
   <form id="f" autocomplete="on">
     <label for="email">E-mail</label>
     <input id="email" type="email" autocomplete="username" required>
@@ -50,7 +50,7 @@ async function buscarERenderizar(){
   if(r.status===401){ if(await renovar()) return buscarERenderizar(); limpaSess(); return false; }
   if(!r.ok)return false;
   var rows=await r.json();
-  if(!rows||!rows[0]||!rows[0].html){document.getElementById('card').innerHTML='<p class="load">Escala ainda nÃ£o foi gerada hoje. Rode o gerador no PC e recarregue.</p>';return true;}
+  if(!rows||!rows[0]||!rows[0].html){document.getElementById('card').innerHTML='<p class="load">Painel ainda não foi gerado hoje. Rode o gerador no PC e recarregue.</p>';return true;}
   var doc=rows[0].html;
   document.open();document.write(doc);document.close();
   return true;
@@ -69,7 +69,7 @@ async function entrar(email,senha){
   if(!r.ok){mostrarErro(j.error_description||j.msg||('Falha no login ('+r.status+')'));return;}
   setSess(j);
   var ok=await buscarERenderizar();
-  if(!ok)mostrarErro('Login OK, mas nÃ£o consegui carregar o painel do gerente.');
+  if(!ok)mostrarErro('Login OK, mas não consegui carregar o painel do gerente.');
 }
 document.getElementById('f').addEventListener('submit',function(ev){
   ev.preventDefault();
@@ -77,9 +77,8 @@ document.getElementById('f').addEventListener('submit',function(ev){
   document.getElementById('btn').disabled=true;
   entrar(document.getElementById('email').value.trim(),document.getElementById('senha').value);
 });
-// jÃ¡ logado? tenta abrir direto
+// já logado? tenta abrir direto
 if(getSess())buscarERenderizar().then(function(ok){if(!ok)document.getElementById('btn').disabled=false;});
 </script>
 </body>
 </html>
-
