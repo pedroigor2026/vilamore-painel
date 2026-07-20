@@ -17,7 +17,11 @@
   button{width:100%;margin-top:20px;padding:12px;border:0;border-radius:9px;background:#4299e1;color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
   button:disabled{opacity:.6;cursor:wait}
   .erro{margin-top:14px;color:#fc8181;font-size:.85rem;min-height:1.1em;text-align:center}
+  .erro.ok{color:#68d391}
   .load{text-align:center;color:#a0aec0}
+  .lnk{margin-top:14px;text-align:center}
+  .lnk a{color:#7db4f0;font-size:.85rem;text-decoration:none}
+  .lnk a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -31,6 +35,7 @@
     <input id="senha" type="password" autocomplete="current-password" required>
     <button id="btn" type="submit">Entrar</button>
     <div class="erro" id="erro"></div>
+    <div class="lnk"><a href="#" id="esqueci">Esqueci minha senha</a></div>
   </form>
 </div>
 <script>
@@ -77,8 +82,58 @@ document.getElementById('f').addEventListener('submit',function(ev){
   document.getElementById('btn').disabled=true;
   entrar(document.getElementById('email').value.trim(),document.getElementById('senha').value);
 });
-// já logado? tenta abrir direto
-if(getSess())buscarERenderizar().then(function(ok){if(!ok)document.getElementById('btn').disabled=false;});
+
+// ===== esqueci minha senha =====
+function aviso(t,ok){var e=document.getElementById('erro');e.textContent=t;e.className='erro'+(ok?' ok':'');}
+document.getElementById('esqueci').addEventListener('click',async function(ev){
+  ev.preventDefault();
+  var email=document.getElementById('email').value.trim();
+  if(!email){aviso('Digite seu e-mail no campo acima e clique de novo.');return;}
+  aviso('Enviando...',true);
+  try{
+    var r=await fetch(SB_URL+'/auth/v1/recover',{method:'POST',headers:{apikey:SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({email:email})});
+    if(r.ok)aviso('Link de recuperação enviado para '+email+'. Confira a caixa de entrada (e o spam).',true);
+    else{var j=await r.json();aviso(j.error_description||j.msg||('Não consegui enviar ('+r.status+'). Tente de novo em alguns minutos.'));}
+  }catch(e){aviso('Sem conexão. Tente de novo.');}
+});
+
+// ===== volta do link do e-mail (redefinir senha) =====
+function hashParams(){
+  var p={},h=location.hash.replace(/^#/,'').split('&');
+  for(var i=0;i<h.length;i++){var kv=h[i].split('=');if(kv[0])p[kv[0]]=decodeURIComponent(kv[1]||'');}
+  return p;
+}
+var _hp=hashParams();
+if(_hp.type==='recovery'&&_hp.access_token){
+  document.getElementById('card').innerHTML=
+    '<h1>Nova senha</h1><p class="sub">Crie a nova senha de acesso ao painel</p>'+
+    '<form id="fr"><label for="ns1">Nova senha (mínimo 10 caracteres, use letras, números e símbolos)</label>'+
+    '<input id="ns1" type="password" autocomplete="new-password" required>'+
+    '<label for="ns2">Repita a nova senha</label>'+
+    '<input id="ns2" type="password" autocomplete="new-password" required>'+
+    '<button id="btnr" type="submit">Salvar nova senha</button>'+
+    '<div class="erro" id="erro"></div></form>';
+  document.getElementById('fr').addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var s1=document.getElementById('ns1').value,s2=document.getElementById('ns2').value;
+    if(s1.length<10){aviso('A senha precisa ter pelo menos 10 caracteres.');return;}
+    if(s1!==s2){aviso('As duas senhas não conferem.');return;}
+    document.getElementById('btnr').disabled=true;
+    try{
+      var r=await fetch(SB_URL+'/auth/v1/user',{method:'PUT',headers:{apikey:SB_ANON,'Content-Type':'application/json',Authorization:'Bearer '+_hp.access_token},body:JSON.stringify({password:s1})});
+      var j=await r.json();
+      if(!r.ok){aviso(j.error_description||j.msg||('Falhou ('+r.status+'). Peça um link novo.'));document.getElementById('btnr').disabled=false;return;}
+      setSess({access_token:_hp.access_token,refresh_token:_hp.refresh_token});
+      history.replaceState(null,'',location.pathname);
+      aviso('Senha alterada! Abrindo o painel...',true);
+      var ok=await buscarERenderizar();
+      if(!ok)location.reload();
+    }catch(e){aviso('Sem conexão. Tente de novo.');document.getElementById('btnr').disabled=false;}
+  });
+}else{
+  // já logado? tenta abrir direto
+  if(getSess())buscarERenderizar().then(function(ok){if(!ok)document.getElementById('btn').disabled=false;});
+}
 </script>
 </body>
 </html>
