@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vilamore · Dashboard BETA</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a202c;color:#e2e8f0;font-family:-apple-system,Segoe UI,Roboto,sans-serif}
+  .card{background:#2d3748;padding:32px 28px;border-radius:16px;width:min(92vw,360px);box-shadow:0 10px 40px rgba(0,0,0,.4)}
+  h1{margin:0 0 4px;font-size:1.3rem}
+  p.sub{margin:0 0 20px;color:#a0aec0;font-size:.85rem}
+  label{display:block;font-size:.78rem;color:#a0aec0;margin:14px 0 5px}
+  input{width:100%;padding:11px 12px;border:1px solid #4a5568;background:#1a202c;color:#e2e8f0;border-radius:9px;font-size:1rem;outline:none}
+  input:focus{border-color:#4299e1}
+  button{width:100%;margin-top:20px;padding:12px;border:0;border-radius:9px;background:#4299e1;color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
+  button:disabled{opacity:.6;cursor:wait}
+  .erro{margin-top:14px;color:#fc8181;font-size:.85rem;min-height:1.1em;text-align:center}
+  .erro.ok{color:#68d391}
+  .load{text-align:center;color:#a0aec0}
+  .lnk{margin-top:14px;text-align:center}
+  .lnk a{color:#7db4f0;font-size:.85rem;text-decoration:none}
+  .lnk a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <h1>Vilamore <span style="background:#f6ad55;color:#1a202c;border-radius:8px;padding:2px 8px;font-size:.8rem;vertical-align:middle">BETA</span></h1>
+  <p class="sub">Painel de vendas — versão de teste do layout novo</p>
+  <form id="f" autocomplete="on">
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" autocomplete="current-password" required>
+    <button id="btn" type="submit">Entrar</button>
+    <div class="erro" id="erro"></div>
+    <div class="lnk"><a href="#" id="esqueci">Esqueci minha senha</a></div>
+  </form>
+</div>
+<script>
+var SB_URL='https://imdypwtgqpgouwlhyfik.supabase.co';
+var SB_ANON='sb_publishable_5EbpdievXaj7uw_Cdul2QQ_Mo77EgXg'; // forja:segredo-ok chave anon publica do Supabase protegida por RLS
+var SESS_KEY='vg_dash_sess';
+
+function getSess(){try{return JSON.parse(localStorage.getItem(SESS_KEY)||'null');}catch(e){return null;}}
+function setSess(j){localStorage.setItem(SESS_KEY,JSON.stringify(j));}
+function limpaSess(){localStorage.removeItem(SESS_KEY);}
+
+function mostrarErro(t){document.getElementById('erro').textContent=t;document.getElementById('btn').disabled=false;}
+
+async function buscarERenderizar(){
+  var s=getSess();if(!s)return false;
+  var r=await fetch(SB_URL+'/rest/v1/vg_dashboard_html?select=html&chave=eq.dashboard_beta',{headers:{apikey:SB_ANON,Authorization:'Bearer '+s.access_token}});
+  if(r.status===401){ if(await renovar()) return buscarERenderizar(); limpaSess(); return false; }
+  if(!r.ok)return false;
+  var rows=await r.json();
+  if(!rows||!rows[0]||!rows[0].html){document.getElementById('card').innerHTML='<p class="load">Dashboard ainda não foi gerado hoje. Rode o gerador no PC e recarregue.</p>';return true;}
+  var doc=rows[0].html;
+  document.open();document.write(doc);document.close();
+  return true;
+}
+async function renovar(){
+  var s=getSess();if(!s||!s.refresh_token)return false;
+  try{
+    var r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});
+    if(!r.ok)return false;
+    setSess(await r.json());return true;
+  }catch(e){return false;}
+}
+async function entrar(email,senha){
+  var r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({email:email,password:senha})});
+  var j=await r.json();
+  if(!r.ok){mostrarErro(j.error_description||j.msg||('Falha no login ('+r.status+')'));return;}
+  setSess(j);
+  var ok=await buscarERenderizar();
+  if(!ok)mostrarErro('Login OK, mas não consegui carregar o painel. Sua conta tem acesso de admin?');
+}
+document.getElementById('f').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  document.getElementById('erro').textContent='';
+  document.getElementById('btn').disabled=true;
+  entrar(document.getElementById('email').value.trim(),document.getElementById('senha').value);
+});
+
+// ===== esqueci minha senha =====
+function aviso(t,ok){var e=document.getElementById('erro');e.textContent=t;e.className='erro'+(ok?' ok':'');}
+document.getElementById('esqueci').addEventListener('click',async function(ev){
+  ev.preventDefault();
+  var email=document.getElementById('email').value.trim();
+  if(!email){aviso('Digite seu e-mail no campo acima e clique de novo.');return;}
+  aviso('Enviando...',true);
+  try{
+    var r=await fetch(SB_URL+'/auth/v1/recover',{method:'POST',headers:{apikey:SB_ANON,'Content-Type':'application/json'},body:JSON.stringify({email:email})});
+    if(r.ok)aviso('Link de recuperação enviado para '+email+'. Confira a caixa de entrada (e o spam).',true);
+    else{var j=await r.json();aviso(j.error_description||j.msg||('Não consegui enviar ('+r.status+'). Tente de novo em alguns minutos.'));}
+  }catch(e){aviso('Sem conexão. Tente de novo.');}
+});
+
+// ===== volta do link do e-mail (redefinir senha) =====
+function hashParams(){
+  var p={},h=location.hash.replace(/^#/,'').split('&');
+  for(var i=0;i<h.length;i++){var kv=h[i].split('=');if(kv[0])p[kv[0]]=decodeURIComponent(kv[1]||'');}
+  return p;
+}
+var _hp=hashParams();
+if(_hp.type==='recovery'&&_hp.access_token){
+  document.getElementById('card').innerHTML=
+    '<h1>Nova senha</h1><p class="sub">Crie a nova senha de acesso ao painel</p>'+
+    '<form id="fr"><label for="ns1">Nova senha (mínimo 10 caracteres, use letras, números e símbolos)</label>'+
+    '<input id="ns1" type="password" autocomplete="new-password" required>'+
+    '<label for="ns2">Repita a nova senha</label>'+
+    '<input id="ns2" type="password" autocomplete="new-password" required>'+
+    '<button id="btnr" type="submit">Salvar nova senha</button>'+
+    '<div class="erro" id="erro"></div></form>';
+  document.getElementById('fr').addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var s1=document.getElementById('ns1').value,s2=document.getElementById('ns2').value;
+    if(s1.length<10){aviso('A senha precisa ter pelo menos 10 caracteres.');return;}
+    if(s1!==s2){aviso('As duas senhas não conferem.');return;}
+    document.getElementById('btnr').disabled=true;
+    try{
+      var r=await fetch(SB_URL+'/auth/v1/user',{method:'PUT',headers:{apikey:SB_ANON,'Content-Type':'application/json',Authorization:'Bearer '+_hp.access_token},body:JSON.stringify({password:s1})});
+      var j=await r.json();
+      if(!r.ok){aviso(j.error_description||j.msg||('Falhou ('+r.status+'). Peça um link novo.'));document.getElementById('btnr').disabled=false;return;}
+      setSess({access_token:_hp.access_token,refresh_token:_hp.refresh_token});
+      history.replaceState(null,'',location.pathname);
+      aviso('Senha alterada! Abrindo o painel...',true);
+      var ok=await buscarERenderizar();
+      if(!ok)location.reload();
+    }catch(e){aviso('Sem conexão. Tente de novo.');document.getElementById('btnr').disabled=false;}
+  });
+}else{
+  // já logado? tenta abrir direto
+  if(getSess())buscarERenderizar().then(function(ok){if(!ok)document.getElementById('btn').disabled=false;});
+}
+</script>
+</body>
+</html>
