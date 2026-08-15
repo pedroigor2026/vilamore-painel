@@ -1,0 +1,17 @@
+
+
+# --- protecao de credenciais (auditoria de seguranca 15/08/2026) ---
+.env
+.env.*
+!.env.example
+!.env.exemplo
+!.env.template
+cred.txt
+credenciais*
+*.pem
+*.pfx
+*.p12
+token.json
+service-account*.json
+segredos*
+# --- fim ---
