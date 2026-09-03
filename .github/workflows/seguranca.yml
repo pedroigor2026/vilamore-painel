@@ -1,0 +1,31 @@
+# AS 3 TRAVAS DE SEGURANCA (02/09/2026).
+#
+# Este repositorio e PUBLICO. Toda vez que algo muda aqui, estas tres travas olham antes:
+#   1. senha vazada   2. chave de administrador do banco   3. dado pessoal
+#
+# POR QUE ELE RODA A CADA MUDANCA, e nao so no botao: repositorio PUBLICO tem minutos de graca
+# no GitHub, entao isto NAO consome a cota de 2.000 minutos que estourou em agosto/2026. A regra
+# de "so disparo a mao" existe por causa da cota, e aqui ela nao se aplica.
+#
+# NAO INSTALA NENHUM PACOTE DE FORA de proposito. Node puro, ~10 segundos.
+
+name: Travas de seguranca
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  travas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir as 3 travas
+        run: node .github/seguranca/varre_seguranca.js
+      - name: Provar que as travas ainda pegam de verdade
+        run: node .github/seguranca/testa_travas.js
