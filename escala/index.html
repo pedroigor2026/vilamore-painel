@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://pedroigor2026.github.io https://*.supabase.co; connect-src 'self' https://*.supabase.co; frame-src https://www.youtube.com https://youtu.be; base-uri 'self'; object-src 'none'; form-action 'self'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Escala Vilamore</title>
@@ -12,19 +13,35 @@
 <link rel="apple-touch-icon" href="/vilamore-painel/icon.png">
 <link rel="icon" href="/vilamore-painel/icon.png">
 <style>
-  :root{color-scheme:dark}
+  /* 30/10/2026: visual do MIM — tema "v6" que o MIM mostra de verdade (sempre claro; mesmas cores do
+     js/app.css do MIM e do TEMA_GAMIFICADO do painel). Olhinho na senha igual ao do MIM. */
+  :root{color-scheme:light;
+    --berry:#1E5AA8;--berry-dark:#123C63;--berry-soft:#E8F1FC;
+    --bg:#FDFDFC;--card:#FFFFFF;--ink:#1F2A44;--muted:#5C6478;--line:#E8ECF4;
+    --ok:#0B7A53;--late:#C13438}
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1a202c;color:#e2e8f0;font-family:-apple-system,Segoe UI,Roboto,sans-serif}
-  .card{background:#2d3748;padding:32px 28px;border-radius:16px;width:min(92vw,360px);box-shadow:0 10px 40px rgba(0,0,0,.4)}
-  h1{margin:0 0 4px;font-size:1.3rem}
-  p.sub{margin:0 0 20px;color:#a0aec0;font-size:.85rem}
-  label{display:block;font-size:.78rem;color:#a0aec0;margin:14px 0 5px}
-  input{width:100%;padding:11px 12px;border:1px solid #4a5568;background:#1a202c;color:#e2e8f0;border-radius:9px;font-size:1rem;outline:none}
-  input:focus{border-color:#4299e1}
-  button{width:100%;margin-top:20px;padding:12px;border:0;border-radius:9px;background:#4299e1;color:#fff;font-size:1rem;font-weight:700;cursor:pointer}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ink);font-family:'Sora',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.45}
+  .card{background:var(--card);padding:32px 28px;border-radius:16px;width:min(92vw,400px);border:2px solid var(--line)}
+  h1{margin:0 0 4px;font-size:28px;font-weight:800;letter-spacing:.3px;color:var(--berry-dark);text-align:center}
+  p.sub{margin:0 0 22px;color:var(--muted);font-size:12.5px;text-align:center}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:12px 0 4px}
+  input{width:100%;padding:11px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;font-size:1rem}
+  input:focus{outline:2px solid var(--berry);border-color:var(--berry)}
+  button{width:100%;margin-top:20px;padding:12px 18px;border:0;border-radius:12px;background:var(--berry);color:#fff;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+  button:active{background:var(--berry-dark)}
   button:disabled{opacity:.6;cursor:wait}
-  .erro{margin-top:14px;color:#fc8181;font-size:.85rem;min-height:1.1em;text-align:center}
-  .load{text-align:center;color:#a0aec0}
+  .campo-senha{position:relative}
+  .campo-senha input{padding-right:46px}
+  .campo-senha .ver-senha{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;line-height:1;padding:0;margin:0;display:flex;align-items:center;justify-content:center;background:transparent;border:0;border-radius:8px;cursor:pointer;font-size:17px;opacity:.65;color:var(--ink)}
+  .campo-senha .ver-senha:hover{opacity:1;background:var(--berry-soft)}
+  .campo-senha .ver-senha:focus-visible{outline:2px solid var(--berry);outline-offset:2px;opacity:1}
+  .campo-senha .ver-senha[aria-pressed="true"]{opacity:1}
+  .erro{margin-top:14px;color:var(--late);font-size:13px;min-height:1.1em;text-align:center}
+  .erro.ok{color:var(--ok)}
+  .load{text-align:center;color:var(--muted)}
+  .lnk{margin-top:16px;text-align:center}
+  .lnk a{color:var(--berry);font-size:13.5px;font-weight:600;text-decoration:none}
+  .lnk a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -35,12 +52,22 @@
     <label for="email">E-mail</label>
     <input id="email" type="email" autocomplete="username" required>
     <label for="senha">Senha</label>
-    <input id="senha" type="password" autocomplete="current-password" required>
+    <div class="campo-senha"><input id="senha" type="password" autocomplete="current-password" required><button type="button" class="ver-senha" data-ver-senha="senha" aria-label="Mostrar a senha" aria-pressed="false" title="Mostrar a senha">👁️</button></div>
     <button id="btn" type="submit">Entrar</button>
     <div class="erro" id="erro"></div>
   </form>
 </div>
 <script>
+// 30/10/2026 olhinho: mostra/esconde a senha digitada (vale tambem na tela de nova senha, criada depois)
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('.ver-senha');if(!b)return;
+  ev.preventDefault();
+  var i=document.getElementById(b.getAttribute('data-ver-senha'));if(!i)return;
+  var ver=i.type==='password';i.type=ver?'text':'password';
+  b.setAttribute('aria-pressed',ver?'true':'false');
+  var t=ver?'Esconder a senha':'Mostrar a senha';b.setAttribute('aria-label',t);b.title=t;b.textContent=ver?'🙈':'👁️';
+  i.focus();
+});
 var SB_URL='https://imdypwtgqpgouwlhyfik.supabase.co';
 var SB_ANON='sb_publishable_5EbpdievXaj7uw_Cdul2QQ_Mo77EgXg'; // forja:segredo-ok chave anon publica do Supabase protegida por RLS
 var SESS_KEY='vg_dash_sess'; // MESMA chave do painel: sessao vale para os dois e liga o sync

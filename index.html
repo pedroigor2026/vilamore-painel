@@ -6,19 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vilamore · Dashboard</title>
 <style>
-  /* 30/10/2026: cores do MIM (mesmas variaveis do js/app.css do MIM) e olhinho na senha */
-  :root{color-scheme:light dark;
-    --berry:#1D6FB8;--berry-dark:#123C63;--berry-soft:#E4EFFB;
-    --bg:#F5F4F7;--card:#FFFFFF;--ink:#241B20;--muted:#6A6072;--line:#E7E3EA;
-    --ok:#2F7D46;--late:#C13438;--titulo:var(--berry-dark)}
-  @media (prefers-color-scheme: dark){
-    :root{--bg:#141217;--card:#1E1B23;--ink:#ECE8EF;--muted:#9A93A1;--line:#332F3A;
-      --berry:#5AA7EA;--berry-soft:#17293E;--ok:#4CC386;--late:#E2696B;--titulo:var(--berry)}
-  }
+  /* 30/10/2026: visual do MIM — tema "v6" que o MIM mostra de verdade (sempre claro; mesmas cores do
+     js/app.css do MIM e do TEMA_GAMIFICADO do painel). Olhinho na senha igual ao do MIM. */
+  :root{color-scheme:light;
+    --berry:#1E5AA8;--berry-dark:#123C63;--berry-soft:#E8F1FC;
+    --bg:#FDFDFC;--card:#FFFFFF;--ink:#1F2A44;--muted:#5C6478;--line:#E8ECF4;
+    --ok:#0B7A53;--late:#C13438}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--ink);font-family:'Sora',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.45}
-  .card{background:var(--card);padding:32px 28px;border-radius:14px;width:min(92vw,400px);border:1px solid var(--line);box-shadow:0 10px 30px rgba(18,60,99,.10)}
-  h1{margin:0 0 2px;font-size:40px;font-weight:800;letter-spacing:.5px;color:var(--titulo);text-align:center}
+  .card{background:var(--card);padding:32px 28px;border-radius:16px;width:min(92vw,400px);border:2px solid var(--line)}
+  h1{margin:0 0 4px;font-size:28px;font-weight:800;letter-spacing:.3px;color:var(--berry-dark);text-align:center}
   p.sub{margin:0 0 22px;color:var(--muted);font-size:12.5px;text-align:center}
   label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:12px 0 4px}
   input{width:100%;padding:11px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;font-size:1rem}
